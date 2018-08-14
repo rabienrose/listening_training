@@ -1,0 +1,6 @@
+<view class='page'>
+  <text>{{test}}</text>
+  <button bindtap='change'>修改test为hello world!</button>
+  <text>{{person.name}}</text>
+  <button bindtap='changePerson'>修改人名为fxjzzyo</button>
+</view>

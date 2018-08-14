@@ -1,0 +1,2 @@
+<!--pages/english/english.wxml-->
+<button wx:for="{{a_list}}" id="{{item.id}}" bindtap='go' class='title'>{{item.title}}</button>

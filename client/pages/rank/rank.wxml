@@ -1,0 +1,5 @@
+<!--pages/rank/rank.wxml-->
+<view wx:for="{{user_list}}">
+  \t<image class="userinfo-avatar" src="{{item.img_src}}" mode="cover"></image>
+  \t{{item.name}}\t{{item.score}}
+</view>

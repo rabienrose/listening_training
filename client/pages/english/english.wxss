@@ -1,0 +1,2 @@
+/* pages/english/english.wxss */
+.title{font-size:smaller; line-height:22px; padding:10px}
