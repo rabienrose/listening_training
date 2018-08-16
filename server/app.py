@@ -5,7 +5,9 @@ from flask import request
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import sqlite3
+import black_list
 import random
+import re
 import json
 
 app = Flask(__name__)
@@ -36,7 +38,7 @@ def get_a_article(index):
         item_dict['mp3'] = item[3]
         article_list.append(item_dict)
     article_json=json.dumps(article_list)
-    #print(article_json)
+    print("[/get_a_article]article_json: " + article_json)
     return article_json
 
 def write_a_article(title, aud_src, content, keywords):
@@ -54,41 +56,26 @@ def save_a_article(html_addr):
     content_h = soup.find_all(id='content')[0]
     all_p=content_h.find_all('p')
     choosed_word=[]
+    filtered_words=[]
     for p in all_p:
         p_str=p.text
-        sents=p_str.split('[,.]')
-        for sent in sents:
-            words=sent.split(' ')
-            if len(words)<=10:
+        words=re.split("[,. '“”]",p_str)
+        for word in words:
+            if len(word)<=4:
                 continue
-            candi_word=[]
-            for word in words:
-                if len(word)>=5:
-                    candi_word.append(word)
-            if len(candi_word)<=0:
+            if word.isupper():
                 continue
-            choosed_id=random.randint(0,len(candi_word)-1)
-            choosed_word.append(candi_word[choosed_id])
-    keywords = []
-    for i in range(len(choosed_word)):
-        keywords.append(choosed_word[i])
-        first_fake=''
-        second_fake = ''
-        while True:
-            choosed_id = random.randint(0, len(choosed_word) - 1)
-            if choosed_word[choosed_id]!= choosed_word[i] and choosed_word[choosed_id] != first_fake and choosed_word[choosed_id] != second_fake:
-                if first_fake== "":
-                    first_fake=choosed_word[choosed_id]
-                else:
-                    second_fake=choosed_word[choosed_id]
-                    break
-        keywords.append(first_fake)
-        keywords.append(second_fake)
-    write_a_article(title, aud_src, '', keywords)
+            if not word.isalpha():
+                continue
+            word = word.lower()
+            if word in black_list.black_list:
+                continue
+            filtered_words.append(word)
+    write_a_article(title, aud_src, '', filtered_words)
 
 @app.route('/article_list', methods=['GET', 'POST'])
 def get_article_list():
-    return get_a_article(3)
+    return get_a_article(10)
 
 @app.route('/login', methods=['GET', 'POST'])
 def get_user_info():
@@ -97,9 +84,11 @@ def get_user_info():
     appid='wx7fe6882cde4dece0'
     secret='d118e90b11fbc2aeb2e8f6c896dd429d'
     js_code=rec_data
+    print("[/login]js_code: " + js_code)
     r = requests.get(
         'https://api.weixin.qq.com/sns/jscode2session?&appid='+appid+'&secret='+secret+'&js_code='+js_code+'&grant_type=authorization_code')
     re_obj=json.loads(r.text)
+    print("[/login]openid: " + re_obj['openid'])
     return re_obj['openid']
 
 def check_add_user(openid, name, img_src):
@@ -107,7 +96,7 @@ def check_add_user(openid, name, img_src):
     c.execute('select * from user where openid=?', [openid])
     records = c.fetchall()
     if len(records) == 0:
-        c.execute("insert into user (name, openid, img_src, score) VALUES (?,?,?,?)",
+        c.execute("insert into user (name, openid, img_src) VALUES (?,?,?)",
                   [name, openid, img_src, '{}'])
         conn.commit()
 
@@ -115,10 +104,11 @@ def update_score(openid, score, article_id):
     c = conn.cursor()
     c.execute('select * from user where openid=?', [openid])
     records = c.fetchall()
-    for (_,_,_,_,score_json, _) in records:
+    print("[update_score]score: " + score)
+    for (_,_,_,_,score_json, _, _) in records:
         score_objs=json.loads(score_json)
         if article_id in score_objs.keys():
-            if score_objs[article_id]<score:
+            if int(score_objs[article_id])<int(score):
                 score_objs[article_id]=score
         else:
             score_objs[article_id]=score
@@ -126,6 +116,8 @@ def update_score(openid, score, article_id):
         for s in score_objs.values():
             t_score=t_score+int(s)
         score_str=json.dumps(score_objs)
+        print("[update_score]score_str: "+score_str)
+        print("[update_score]t_score: " + str(t_score))
         c.execute("update user set score=?, total_s=? where openid=?", [score_str, t_score,openid])
         conn.commit()
 
@@ -136,10 +128,26 @@ def update_score_handle():
     article_id = request.values.get('article_id')
     name = request.values.get('name')
     img_src = request.values.get('img_src')
-    print(openid)
+    print('[/update] openid: '+openid)
+    print('[/update] article_id: ' + article_id)
+    print('[/update] score: ' + score)
     check_add_user(openid, name, img_src)
     update_score(openid, score, article_id)
     return ''
+
+
+@app.route('/get_user_scores', methods=['GET', 'POST'])
+def get_user_scores():
+    openid = request.values.get('openid')
+    print('[/get_user_scores] openid: ' + openid)
+    c = conn.cursor()
+    c.execute('select * from user where openid=?', [openid])
+    records = c.fetchall()
+    re='{}'
+    for (_, _, _, _, score, _,_) in records:
+        re=score
+    print('[/get_user_scores] re: '+re)
+    return re
 
 @app.route('/get_rank', methods=['GET', 'POST'])
 def get_rank():
@@ -147,12 +155,14 @@ def get_rank():
     c.execute('select * from user order by total_s desc LIMIT 10')
     records = c.fetchall()
     re_list=[]
-    for (_, name, openid, img_src, score, total_s) in records:
+    for (_, name, openid, img_src, score, total_s,_) in records:
         re_dict={}
         re_dict['name']=name
         re_dict['img_src'] = img_src
         re_dict['score'] = total_s
         re_list.append(re_dict)
+    print('[/get_rank] re_list: ')
+    print(re_list)
     return json.dumps(re_list)
 
 def get_article_list_web():
@@ -167,6 +177,7 @@ def get_article_list_web():
 
 if __name__ == '__main__':
     conn=sqlite3.connect('test.db')
+    #get_article_list_web()
     port = int(os.environ.get('PORT', '8000'))
     app.run('0.0.0.0', port=8000, ssl_context=(
         '/home/chamo/Documents/data/weixin.zili-wang.com/Apache/2_weixin.zili-wang.com.crt',
