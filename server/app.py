@@ -38,7 +38,7 @@ def get_a_article(index):
         item_dict['mp3'] = item[3]
         article_list.append(item_dict)
     article_json=json.dumps(article_list)
-    print("[/get_a_article]article_json: " + article_json)
+    #print("[/get_a_article]article_json: " + article_json)
     return article_json
 
 def write_a_article(title, aud_src, content, keywords):
@@ -97,7 +97,7 @@ def check_add_user(openid, name, img_src):
     records = c.fetchall()
     if len(records) == 0:
         c.execute("insert into user (name, openid, img_src) VALUES (?,?,?)",
-                  [name, openid, img_src, '{}'])
+                  [name, openid, img_src])
         conn.commit()
 
 def update_score(openid, score, article_id):
@@ -161,9 +161,10 @@ def get_rank():
         re_dict['img_src'] = img_src
         re_dict['score'] = total_s
         re_list.append(re_dict)
+    re_list_json=json.dumps(re_list)
     print('[/get_rank] re_list: ')
-    print(re_list)
-    return json.dumps(re_list)
+    print(re_list_json)
+    return re_list_json
 
 def get_article_list_web():
     root_51voa='http://www.51voa.com'
@@ -176,9 +177,9 @@ def get_article_list_web():
         save_a_article(root_51voa+a.attrs['href'])
 
 if __name__ == '__main__':
-    conn=sqlite3.connect('test.db')
+    conn=sqlite3.connect('test.db',check_same_thread=False)
     #get_article_list_web()
-    port = int(os.environ.get('PORT', '8000'))
-    app.run('0.0.0.0', port=8000, ssl_context=(
-        '/home/chamo/Documents/data/weixin.zili-wang.com/Apache/2_weixin.zili-wang.com.crt',
-        '/home/chamo/Documents/data/weixin.zili-wang.com/Apache/3_weixin.zili-wang.com.key'))
+    port = int(os.environ.get('PORT', '21070'))
+    app.run('0.0.0.0', port=21070, ssl_context=(
+        './2_weixin.zili-wang.com.crt',
+        './3_weixin.zili-wang.com.key'))
