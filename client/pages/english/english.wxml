@@ -1,2 +1,5 @@
 <!--pages/english/english.wxml-->
-<button wx:for="{{a_list}}" id="{{item.id}}" bindtap='go' class='title'>{{item.title}}</button>
+<text>选择一篇文章开始挑战</text>
+<button wx:for="{{a_list}}" id="{{item.id}}" bindtap='go' class='title'>
+  \t{{item.title}}\t({{item.score}})
+</button>

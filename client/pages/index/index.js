@@ -18,7 +18,6 @@ Page({
         duration: 2000
       })
       return
-
     }
     wx.navigateTo({
       url: '../english/english',
@@ -29,9 +28,9 @@ Page({
       url: '../rank/rank',
     })
   },
-  bindTest: function () {
+  bindHelp: function () {
     wx.navigateTo({
-      url: '../test/test',
+      url: '../help/help',
     })
   },
 
