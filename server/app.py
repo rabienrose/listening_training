@@ -4,9 +4,11 @@ from flask import Flask
 from flask import render_template
 from flask import request
 from flask_wtf import FlaskForm
+from werkzeug.datastructures import CombinedMultiDict
+from wtforms import Form
 from flask import redirect
 from wtforms.widgets import TextArea
-from wtforms import StringField, SubmitField, IntegerField
+from wtforms import StringField, SubmitField, IntegerField, FileField
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import sqlite3
@@ -18,11 +20,12 @@ import operator
 
 app = Flask(__name__)
 
-class ArticleForm(FlaskForm):
+class ArticleForm(Form):
     title= StringField('Title')
     content = StringField('Content', widget=TextArea())
     level = IntegerField('Level')
     mp3 = StringField('Mp3')
+    mp3_file= FileField('Mp3 File')
     id = IntegerField('ID')
     submit=SubmitField('Submit')
 
@@ -73,7 +76,7 @@ def get_a_article(index):
         item_dict['sorted_score'] = sorted_score
         article_list.append(item_dict)
     article_json=json.dumps(article_list)
-    print("[/get_a_article]article_json: " + article_json)
+    #print("[/get_a_article]article_json: " + article_json)
     return article_json
 
 def write_a_article(title, aud_src, content, keywords, level):
@@ -86,7 +89,7 @@ def write_a_article(title, aud_src, content, keywords, level):
 
 def process_keywords(content):
     filtered_words=[]
-    words = re.split("[,. '“”]", content)
+    words = re.split("[,. '“”\n]", content)
     for word in words:
         if len(word) <= 4:
             continue
@@ -115,7 +118,7 @@ def save_a_article(html_addr):
 
 @app.route('/article_list', methods=['GET', 'POST'])
 def get_article_list():
-    return get_a_article(10)
+    return get_a_article(100)
 
 @app.route('/article_content', methods=['GET', 'POST'])
 def get_article_content():
@@ -217,13 +220,7 @@ def get_rank():
     print(re_list_json)
     return re_list_json
 
-@app.route('/server_ui', methods=['GET', 'POST'])
-def server_ui():
-    c = conn.cursor()
-    c.execute('select * from article order by id LIMIT ?', [20])
-    records = c.fetchall()
-    form=ArticleForm()
-    return render_template('upload.html', form=form, result=records)
+
 
 def modify_article(id, title, mp3, content, level):
     c = conn.cursor()
@@ -248,16 +245,29 @@ def del_article(id):
     c.execute("delete from article where id=?", [id])
     return
 
+@app.route('/server_ui', methods=['GET', 'POST'])
+def server_ui():
+    c = conn.cursor()
+    c.execute('select * from article order by id LIMIT ?', [100])
+    records = c.fetchall()
+    form=ArticleForm(request.form)
+    return render_template('upload.html', form=form, result=records)
+
 @app.route('/add_article_ui', methods=['GET', 'POST'])
 def add_article_ui():
-    form = ArticleForm()
+    form = ArticleForm(CombinedMultiDict((request.files, request.form)))
     title= form.title.data
     mp3 = form.mp3.data
     level = form.level.data
     content = form.content.data
     id = form.id.data
+    if form.mp3_file.data:
+        form.mp3_file.data.save('/var/www/html/'+form.mp3_file.data.filename)
+        mp3='http://weixin.zili-wang.com/'+form.mp3_file.data.filename
     if not id: #add new record
         keywords = process_keywords(content)
+        if title == '' or mp3 == '' or not level or content == '':
+            return "all fields are needed when adding new article"
         if level>5 or level<=0:
             return 'level must be in the range of 1-5'
         write_a_article(title, mp3, content, keywords, level)
@@ -281,5 +291,6 @@ def get_article_list_web():
 if __name__ == '__main__':
     conn=sqlite3.connect('test.db',check_same_thread=False)
     app.config['SECRET_KEY'] = 'xxx'
+    app.config['UPLOAD_FOLDER']='./'
     #app.run('0.0.0.0', port=21070)
     app.run('0.0.0.0', port=21070, ssl_context=('./1_weixin.zili-wang.com_bundle.crt','./2_weixin.zili-wang.com.key'))

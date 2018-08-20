@@ -6,7 +6,7 @@
     <link rel='shortcut icon' href='favicon.ico'/>
 </head>
 <body>
-    <form action="add_article_ui" method="post">
+    <form action="add_article_ui" method="post" enctype="multipart/form-data">
         <p>
             {{form.id.label}}
             {{form.id}}
@@ -18,6 +18,10 @@
         <p>
             {{form.mp3.label}}
             {{form.mp3}}
+        </p>
+        <p>
+            {{form.mp3_file.label}}
+            {{form.mp3_file}}
         </p>
         <p>
             {{form.level.label}}
