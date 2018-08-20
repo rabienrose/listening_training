@@ -1,7 +1,12 @@
 import requests
 import os
 from flask import Flask
+from flask import render_template
 from flask import request
+from flask_wtf import FlaskForm
+from flask import redirect
+from wtforms.widgets import TextArea
+from wtforms import StringField, SubmitField, IntegerField
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import sqlite3
@@ -9,9 +14,17 @@ import black_list
 import random
 import re
 import json
+import operator
 
 app = Flask(__name__)
 
+class ArticleForm(FlaskForm):
+    title= StringField('Title')
+    content = StringField('Content', widget=TextArea())
+    level = IntegerField('Level')
+    mp3 = StringField('Mp3')
+    id = IntegerField('ID')
+    submit=SubmitField('Submit')
 
 @app.route('/try', methods=['GET', 'POST'])
 def handle_api_evaluation():
@@ -36,17 +49,56 @@ def get_a_article(index):
         item_dict['keywords']=item[1]
         item_dict['title']=item[2]
         item_dict['mp3'] = item[3]
+        item_dict['level'] = item[5]
+        c.execute('select * from user')
+        records = c.fetchall()
+        all_score={}
+        for (_, name, _, _, score, _, _) in records:
+            score_obj = json.loads(score)
+            if str(item_dict['id']) in score_obj.keys():
+                all_score[name]=int(score_obj[str(item_dict['id'])])
+        sorted_all=sorted(all_score.items(),key=operator.itemgetter(1), reverse=True)
+        sorted_name=[]
+        sorted_score = []
+        temp_count=0
+        for (name, score) in sorted_all:
+
+            sorted_name.append(name)
+            sorted_score.append(score)
+            temp_count = temp_count + 1
+            if temp_count >=3:
+                break
+
+        item_dict['sorted_name'] = sorted_name
+        item_dict['sorted_score'] = sorted_score
         article_list.append(item_dict)
     article_json=json.dumps(article_list)
-    #print("[/get_a_article]article_json: " + article_json)
+    print("[/get_a_article]article_json: " + article_json)
     return article_json
 
-def write_a_article(title, aud_src, content, keywords):
+def write_a_article(title, aud_src, content, keywords, level):
     keyword_str = ','.join(keywords)
     c = conn.cursor()
-    c.execute("INSERT INTO article (title, aud_src, content, keyword) VALUES (?,?,?,?)",[title, aud_src, content, keyword_str])
+    c.execute("INSERT INTO article (title, aud_src, content, keyword, level) VALUES (?,?,?,?,?)",
+              [title, aud_src, content, keyword_str, level])
     conn.commit()
     return
+
+def process_keywords(content):
+    filtered_words=[]
+    words = re.split("[,. '“”]", content)
+    for word in words:
+        if len(word) <= 4:
+            continue
+        if word.isupper():
+            continue
+        if not word.isalpha():
+            continue
+        word = word.lower()
+        if word in black_list.black_list:
+            continue
+        filtered_words.append(word)
+    return filtered_words
 
 def save_a_article(html_addr):
     html = urlopen(html_addr)
@@ -55,27 +107,25 @@ def save_a_article(html_addr):
     aud_src = soup.find_all(id='mp3')[0].attrs['href']
     content_h = soup.find_all(id='content')[0]
     all_p=content_h.find_all('p')
-    choosed_word=[]
-    filtered_words=[]
+    content=''
     for p in all_p:
-        p_str=p.text
-        words=re.split("[,. '“”]",p_str)
-        for word in words:
-            if len(word)<=4:
-                continue
-            if word.isupper():
-                continue
-            if not word.isalpha():
-                continue
-            word = word.lower()
-            if word in black_list.black_list:
-                continue
-            filtered_words.append(word)
+        content=content+p.text
+    filtered_words=process_keywords(content)
     write_a_article(title, aud_src, '', filtered_words)
 
 @app.route('/article_list', methods=['GET', 'POST'])
 def get_article_list():
     return get_a_article(10)
+
+@app.route('/article_content', methods=['GET', 'POST'])
+def get_article_content():
+    article_id = request.values.get('article_id')
+    c = conn.cursor()
+    c.execute('select * from article where id= ?', [article_id])
+    records = c.fetchall()
+    for item in records:
+        content=item[4]
+    return content
 
 @app.route('/login', methods=['GET', 'POST'])
 def get_user_info():
@@ -138,6 +188,7 @@ def update_score_handle():
 
 @app.route('/get_user_scores', methods=['GET', 'POST'])
 def get_user_scores():
+    #openid = request.json.get('openid', '')
     openid = request.values.get('openid')
     print('[/get_user_scores] openid: ' + openid)
     c = conn.cursor()
@@ -166,6 +217,57 @@ def get_rank():
     print(re_list_json)
     return re_list_json
 
+@app.route('/server_ui', methods=['GET', 'POST'])
+def server_ui():
+    c = conn.cursor()
+    c.execute('select * from article order by id LIMIT ?', [20])
+    records = c.fetchall()
+    form=ArticleForm()
+    return render_template('upload.html', form=form, result=records)
+
+def modify_article(id, title, mp3, content, level):
+    c = conn.cursor()
+    if content:
+        keywords = process_keywords(content)
+        keyword_str = ','.join(keywords)
+        c.execute("update article set content=?, keyword=? where id=?", [content, keyword_str, id])
+        conn.commit()
+    if title:
+        c.execute("update article set title=? where id=?", [title, id])
+        conn.commit()
+    if mp3:
+        c.execute("update article set aud_src=? where id=?", [mp3, id])
+        conn.commit()
+    if level:
+        c.execute("update article set level=? where id=?", [level, id])
+        conn.commit()
+    return
+
+def del_article(id):
+    c = conn.cursor()
+    c.execute("delete from article where id=?", [id])
+    return
+
+@app.route('/add_article_ui', methods=['GET', 'POST'])
+def add_article_ui():
+    form = ArticleForm()
+    title= form.title.data
+    mp3 = form.mp3.data
+    level = form.level.data
+    content = form.content.data
+    id = form.id.data
+    if not id: #add new record
+        keywords = process_keywords(content)
+        if level>5 or level<=0:
+            return 'level must be in the range of 1-5'
+        write_a_article(title, mp3, content, keywords, level)
+    else:
+        if title!='' or mp3!='' or level or content!='': #modify
+            modify_article(id, title, mp3, content, level)
+        else: #del
+            del_article(id)
+    return redirect('/server_ui')
+
 def get_article_list_web():
     root_51voa='http://www.51voa.com'
     article_51voa=root_51voa+'/VOA_Standard_1.html'
@@ -180,6 +282,5 @@ if __name__ == '__main__':
     conn=sqlite3.connect('test.db',check_same_thread=False)
     #get_article_list_web()
     port = int(os.environ.get('PORT', '21070'))
-    app.run('0.0.0.0', port=21070, ssl_context=(
-        './2_weixin.zili-wang.com.crt',
-        './3_weixin.zili-wang.com.key'))
+    app.config['SECRET_KEY'] = 'xxx'
+    app.run('0.0.0.0', port=21070)
