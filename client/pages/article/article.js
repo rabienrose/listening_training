@@ -5,17 +5,32 @@ Page({
     article_info:{},
     choose:[],
     score:"0/0",
-    play_text:"PLAY",
-    his_score:'0'
+    play_text:"开始",
+    his_score:'0',
+    rank_list:[]
+  },
+
+  init_restart: function(){
+    this.step = -1
+    this.fill_options()
+    this.setData({ score: '0/' + this.ques_num.toString() })
+    this.points = 0
+    this.isPlay = 0
+    this.setData({ play_text: "开始" })
+  },
+
+  go_study: function () {
+    wx.navigateTo({
+      url: '/pages/study/study?dataObj=' + JSON.stringify(this.data.article_info) 
+    })
   },
 
   play: function () {
     if (this.isPlay==1){
-      this.isPlay=0
-      this.setData({ play_text:"PLAY"})
-      this.innerAudioContext.pause()
+      this.innerAudioContext.stop()
+      this.init_restart()
     } else if (this.isPlay == 0){
-      this.setData({ play_text: "LOADING" })
+      this.setData({ play_text: "下载中" })
       this.isPlay = -1
       this.innerAudioContext.play()
     } else{
@@ -139,7 +154,16 @@ Page({
 
   onLoad: function (options) {
     var start_word = parseInt(Math.random() * 5) + 1
-    this.setData({ article_info: JSON.parse(options.dataObj) })
+    var article_info_obj=JSON.parse(options.dataObj)
+    this.setData({ article_info: article_info_obj })
+    var rank_list_temp=[]
+    for (var i = 0; i < article_info_obj['sorted_name'].length; i++){
+      var info_dict={}
+      info_dict['name'] = article_info_obj['sorted_name'][i]
+      info_dict['score'] = article_info_obj['sorted_score'][i]
+      rank_list_temp.push(info_dict)
+    }
+    this.setData({ rank_list: rank_list_temp})
     
     this.innerAudioContext = wx.createInnerAudioContext()
     this.innerAudioContext.src = this.data.article_info['mp3']
@@ -151,9 +175,12 @@ Page({
       })
     })
     this.innerAudioContext.onPlay((res) => {
-      this.setData({ play_text: "PAUSE" })
+      this.setData({ play_text: "停止" })
       this.isPlay = 1
     })
+    // this.innerAudioContext.onStop((res) => {
+    //   this.init_restart()
+    // })
     var keywords = this.data.article_info['keywords']
     var kw_list = keywords.split(",")
     var fake_candi_list = this.randomSort2(kw_list)
@@ -210,12 +237,10 @@ Page({
       }
     }
     this.isPlay=0
-    this.step=-1
-    this.fill_options()
     this.ques_num = this.true_list.length
-    this.setData({ score: '0/' + this.ques_num.toString()})
     this.setData({ his_score: this.get_his_score().toString()})
-    this.points=0
+    this.init_restart()
+    this.setData({ play_text: "开始" })
   },
 
   /**
@@ -228,8 +253,7 @@ Page({
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow: function () {
-  
+  onShow: function () {  
   },
 
   /**

@@ -1,5 +1,13 @@
 <!--pages/english/english.wxml-->
-<text>选择一篇文章开始挑战</text>
-<button wx:for="{{a_list}}" id="{{item.id}}" bindtap='go' class='title'>
+<radio-group bindchange="listenCheckboxChange">
+  分数:
+  <radio value="0"/>
+  时间：
+  <radio value="1" checked='true'/>
+  难度：
+  <radio value="2"/>
+</radio-group>
+<text>\n</text>
+<button wx:for="{{a_list}}" id="{{item.id}}" bindtap='go' class='title' style='color:{{item.color}}'>
   \t{{item.title}}\t({{item.score}})
 </button>

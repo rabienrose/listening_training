@@ -62,6 +62,82 @@ Page({
       })
     }
   },
+
+  onShow: function () {
+    var that = this
+    if (app.globalData.openid==null){
+      wx.login({
+        success: res => {
+          wx.request({
+            url: app.globalData.server + 'login',
+            data: { code: res.code },
+            header: { 'content-type': 'application/x-www-form-urlencoded' },
+            method: 'POST',
+            success: function (res) {
+              app.globalData.openid = res.data
+              wx.request({
+                url: app.globalData.server + 'get_user_scores',
+                data: { openid: app.globalData.openid },
+                header: { 'content-type': 'application/x-www-form-urlencoded' },
+                method: 'POST',
+                success: function (res) {
+                  app.globalData.user_score_info = res.data
+                },
+                fail: function () {
+                  wx.showToast({
+                    title: '用户信息获取失败',
+                    icon: 'none',
+                    duration: 2000
+                  })
+                },
+              })
+            },
+            fail: function () {
+              wx.showToast({
+                title: '用户ID获取失败',
+                icon: 'none',
+                duration: 2000
+              })
+            },
+          })
+        },
+        fail: function () {
+          wx.showToast({
+            title: '登录失败',
+            icon: 'none',
+            duration: 2000
+          })
+        },
+      })
+    }
+
+    if (app.globalData.userInfo==null){
+      wx.getSetting({
+        success: res => {
+          if (res.authSetting['scope.userInfo']) {
+            wx.getUserInfo({
+              success: res => {
+                app.globalData.userInfo = res.userInfo
+                this.setData({
+                  userInfo: app.globalData.userInfo,
+                  hasUserInfo: true
+                })
+              },
+              fail: function () {
+                wx.showToast({
+                  title: '微信信息获取失败',
+                  icon: 'none',
+                  duration: 2000
+                })
+              },
+            })
+          }
+        },
+      })
+    }
+
+  },
+    
   getUserInfo: function(e) {
     console.log(e)
     app.globalData.userInfo = e.detail.userInfo
