@@ -1,8 +1,33 @@
 /* pages/rank/rank.wxss */
 .userinfo-avatar {
-  width: 128rpx;
-  height: 128rpx;
-  margin: 20rpx;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
-  vertical-align:middle;
+}
+
+.table {
+width: 100%;
+}
+
+.tr {
+width: 100%;
+display: flex;
+justify-content: space-between;
+}
+
+.th, .td {
+padding: 5px;
+text-align: center;
+width: 100%;
+
+}
+.tr:nth-child(odd){
+background: #fceecf;
+}
+.tr:nth-child(even){
+background: #f8dca9;
+}
+.th {
+font-weight: 400;
+background: #ffffff;
 }

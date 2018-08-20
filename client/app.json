@@ -6,7 +6,8 @@
     "pages/moe/moe",
     "pages/test/test",
     "pages/article/article",
-    "pages/rank/rank"
+    "pages/rank/rank",
+    "pages/help/help"
   ],
   "window": {
     "backgroundTextStyle": "light",

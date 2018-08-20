@@ -1,30 +1,17 @@
-// pages/rank/rank.js
-const app = getApp()
+// pages/help/help.js
 Page({
+
+  /**
+   * 页面的初始数据
+   */
   data: {
-    user_list:[]
+  
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    var that=this
-    wx.request({
-      url: app.globalData.server+'get_rank',
-      data: {},
-      method: 'GET',
-      success: function (res) {
-        that.setData({ user_list: res.data})
-      },
-      fail: function () {
-        wx.showToast({
-          title: '排名获取失败',
-          icon: 'none',
-          duration: 2000
-        })
-      },
-    })
   
   },
 

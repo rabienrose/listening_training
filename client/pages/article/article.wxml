@@ -1,11 +1,14 @@
 <text>{{article_info.title}}</text>
-<button bindtap='play'>play</button>
+<text>\n</text>
+<text>\n</text>
+<button bindtap='play'>{{play_text}}</button>
 <text>\n</text>
 <button id='0' bindtap='click' class='option'>{{choose[0]}}</button>
 <button id='1' bindtap='click' class='option'>{{choose[1]}}</button>
 <button id='2' bindtap='click' class='option'>{{choose[2]}}</button>
 <text>\n</text>
 <text>分数：{{score}}</text>
+<text> (最高分：{{his_score}})</text>
 <text>\n</text>
 <text>\n</text>
 <text>请点击play按钮播放音频，从下面3个候选单词中选择你听到的单词。</text>

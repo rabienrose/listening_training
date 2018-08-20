@@ -1,5 +1,15 @@
 <!--pages/rank/rank.wxml-->
-<view wx:for="{{user_list}}">
-  \t<image class="userinfo-avatar" src="{{item.img_src}}" mode="cover"></image>
-  \t{{item.name}}\t{{item.score}}
+<view class="table">
+  <view class="tr">
+    <view class="th">头像</view>
+    <view class="th">昵称</view>
+    <view class="th">分数</view>
+  </view>
+  <view class="tr" wx:for="{{user_list}}">
+    <view class='td'> 
+      <image class="userinfo-avatar" src="{{item.img_src}}" mode="cover"></image>
+    </view>
+    <view class="td" style="line-height:105rpx"> {{item.name}} </view>
+    <view class="td" style="line-height:105rpx"> {{item.score}} </view>
+  </view>
 </view>

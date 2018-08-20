@@ -1,6 +1,5 @@
 App({
   onLaunch: function () {
-    // 展示本地存储能力
     var logs = wx.getStorageSync('logs') || []
     logs.unshift(Date.now())
     wx.setStorageSync('logs', logs)
@@ -8,39 +7,71 @@ App({
     wx.login({
       success: res => {
         wx.request({
-          url: 'https://weixin.zili-wang.com:21070/login',
+          url: that.globalData.server + 'login',
           data: { code: res.code},
           method: 'GET',
           success: function (res) {
             that.globalData.openid = res.data
+            wx.request({
+              url: that.globalData.server+ 'get_user_scores',
+              data: { openid: that.globalData.openid },
+              method: 'GET',
+              success: function (res) {
+                that.globalData.user_score_info = res.data
+              },
+              fail: function () {
+                wx.showToast({
+                  title: '用户信息获取失败',
+                  icon: 'none',
+                  duration: 2000
+                })
+              },
+            })
+          },
+          fail: function(){
+            wx.showToast({
+              title: '用户ID获取失败',
+              icon: 'none',
+              duration: 2000
+            })
           },
         })
-      }
+      },
+      fail: function () {
+        wx.showToast({
+          title: '登录失败',
+          icon: 'none',
+          duration: 2000
+        })
+      },
     })
-
     // 获取用户信息
     wx.getSetting({
       success: res => {
         if (res.authSetting['scope.userInfo']) {
-          // 已经授权，可以直接调用 getUserInfo 获取头像昵称，不会弹框
           wx.getUserInfo({
             success: res => {
-              // 可以将 res 发送给后台解码出 unionId
               this.globalData.userInfo = res.userInfo
-
-              // 由于 getUserInfo 是网络请求，可能会在 Page.onLoad 之后才返回
-              // 所以此处加入 callback 以防止这种情况
               if (this.userInfoReadyCallback) {
                 this.userInfoReadyCallback(res)
               }
-            }
+            },
+            fail: function () {
+              wx.showToast({
+                title: '微信信息获取失败',
+                icon: 'none',
+                duration: 2000
+              })
+            },
           })
         }
-      }
+      },
     })
   },
   globalData: {
     userInfo: null,
-    openid:null
+    openid:null,
+    server:'https://weixin.zili-wang.com:21070/',
+    user_score_info:null
   }
 })
