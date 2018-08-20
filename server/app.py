@@ -280,7 +280,6 @@ def get_article_list_web():
 
 if __name__ == '__main__':
     conn=sqlite3.connect('test.db',check_same_thread=False)
-    #get_article_list_web()
-    port = int(os.environ.get('PORT', '21070'))
     app.config['SECRET_KEY'] = 'xxx'
-    app.run('0.0.0.0', port=21070)
+    #app.run('0.0.0.0', port=21070)
+    app.run('0.0.0.0', port=21070, ssl_context=('./1_weixin.zili-wang.com_bundle.crt','./2_weixin.zili-wang.com.key'))
