@@ -11,4 +11,11 @@
 <text> (最高分：{{his_score}})</text>
 <text>\n</text>
 <text>\n</text>
-<text>请点击play按钮播放音频，从下面3个候选单词中选择你听到的单词。</text>
+<view class="table">
+  <view class="tr" wx:for="{{rank_list}}">
+    <view class="td"> {{item.name}} </view>
+    <view class="td"> {{item.score}} </view>
+  </view>
+</view>
+
+<button bindtap='go_study' class='option'>查看原文</button>

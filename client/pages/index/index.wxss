@@ -22,9 +22,5 @@
 }
 
 .func_button{
-  width: 140px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 20rpx;
+  width: 100%;
 }

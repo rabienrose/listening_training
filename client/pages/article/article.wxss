@@ -1,1 +1,26 @@
-/* pages/article/article.wxss */
+.table {
+width: 100%;
+}
+
+.tr {
+width: 100%;
+display: flex;
+justify-content: space-between;
+}
+
+.th, .td {
+padding: 5px;
+text-align: center;
+width: 100%;
+
+}
+.tr:nth-child(odd){
+background: #fceecf;
+}
+.tr:nth-child(even){
+background: #f8dca9;
+}
+.th {
+font-weight: 400;
+background: #ffffff;
+}

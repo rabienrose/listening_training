@@ -11,9 +11,10 @@ Page({
   onLoad: function (options) {
     var that=this
     wx.request({
-      url: app.globalData.server+'get_rank',
+      url: app.globalData.server + 'get_rank',
       data: {},
-      method: 'GET',
+      header: { 'content-type': 'application/x-www-form-urlencoded' },
+      method: 'POST',
       success: function (res) {
         that.setData({ user_list: res.data})
       },

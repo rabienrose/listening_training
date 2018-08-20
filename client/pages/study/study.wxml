@@ -1,0 +1,12 @@
+<progress percent="{{currtRate}}" stroke-width="5" activeColor="#ffd200" backgroundColor="#bcbcbc" show-info="true" />
+<button bindtap='restart'>重新开始</button>
+<button bindtap='back30s'>后退30s</button>
+<button bindtap='forward30s'>前进30s</button>
+<button bindtap='play'>{{play_text}}</button>
+<button bindtap='back3s'>后退2s</button>
+<scroll-view scroll-y="true" style="height: 500px">
+    <text>{{content}}</text>
+</scroll-view>
+
+
+
