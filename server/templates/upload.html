@@ -40,7 +40,7 @@
     {% for item in result %}
         <tr>
             <td>{{item[0]}}</td>
-            <td>{{item[2]}}</td>
+            <td><a href="server_article_detail?article_id={{item[0]}}">{{item[2]}}</a></td>
             <td>{{item[3]}}</td>
             <td>{{item[5]}}</td>
         </tr>

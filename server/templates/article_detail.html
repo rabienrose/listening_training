@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>Chamo</title>
+    <link rel='shortcut icon' href='favicon.ico'/>
+</head>
+<body>
+<p>{{result['title']}}</p>
+<p>{{result['keywords']}}</p>
+{% for para in result['content'] %}
+    <p>{{para}}</p>
+{% endfor %}
+</body>
+</html>

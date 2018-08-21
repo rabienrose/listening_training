@@ -49,7 +49,6 @@ def get_a_article(index):
     for item in records:
         item_dict = {}
         item_dict['id']=item[0]
-        item_dict['keywords']=item[1]
         item_dict['title']=item[2]
         item_dict['mp3'] = item[3]
         item_dict['level'] = item[5]
@@ -89,9 +88,9 @@ def write_a_article(title, aud_src, content, keywords, level):
 
 def process_keywords(content):
     filtered_words=[]
-    words = re.split("[,. '“”\n]", content)
+    words = re.split("[^a-zA-Z]", content)
     for word in words:
-        if len(word) <= 4:
+        if len(word) <= 3:
             continue
         if word.isupper():
             continue
@@ -101,7 +100,11 @@ def process_keywords(content):
         if word in black_list.black_list:
             continue
         filtered_words.append(word)
-    return filtered_words
+    single_list=[]
+    for item in filtered_words:
+        if filtered_words.count(item)==1:
+            single_list.append(item)
+    return single_list
 
 def save_a_article(html_addr):
     html = urlopen(html_addr)
@@ -129,6 +132,21 @@ def get_article_content():
     for item in records:
         content=item[4]
     return content
+
+@app.route('/article_keyword', methods=['GET', 'POST'])
+def get_article_keyword():
+    article_id = request.values.get('article_id')
+    c = conn.cursor()
+    c.execute('select * from article where id= ?', [article_id])
+    records = c.fetchall()
+    for item in records:
+        keywords=item[1]
+        step_rate=float(len(keywords))/float(len(item[4]))
+    re={}
+    re['keywords']=keywords
+    re['step_rate']=step_rate
+    print("[/article_keyword]step_rate: " + str(step_rate))
+    return json.dumps(re)
 
 @app.route('/login', methods=['GET', 'POST'])
 def get_user_info():
@@ -220,8 +238,6 @@ def get_rank():
     print(re_list_json)
     return re_list_json
 
-
-
 def modify_article(id, title, mp3, content, level):
     c = conn.cursor()
     if content:
@@ -244,6 +260,22 @@ def del_article(id):
     c = conn.cursor()
     c.execute("delete from article where id=?", [id])
     return
+
+@app.route('/server_article_detail', methods=['GET'])
+def server_article_detail():
+    article_id = request.values.get('article_id')
+    c = conn.cursor()
+    c.execute('select * from article where id= ?', [article_id])
+    records = c.fetchall()
+    for item in records:
+        record=item
+    key_str=record[1].replace(',', ' ')
+    content_str= record[4].split('\n')
+    ret_re={}
+    ret_re['content']=content_str
+    ret_re['title'] = record[2]
+    ret_re['keywords'] = key_str
+    return render_template('article_detail.html', result=ret_re)
 
 @app.route('/server_ui', methods=['GET', 'POST'])
 def server_ui():
