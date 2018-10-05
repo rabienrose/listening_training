@@ -9,8 +9,10 @@ Page({
     var id = event.currentTarget.id
     for (var i = 0; i < this.data.a_list.length; i++){
       if (this.data.a_list[i].id == id){
+        //console.log(JSON.stringify(this.data.a_list[i]))
+        app.globalData.cur_article_info = this.data.a_list[i]
         wx.navigateTo({
-          url: '/pages/article/article?dataObj=' + JSON.stringify(this.data.a_list[i])
+          url: '/pages/article/article'
         }) 
       }
     }

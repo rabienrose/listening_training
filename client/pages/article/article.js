@@ -4,6 +4,7 @@ Page({
   data: {
     article_info:{},
     choose:[],
+    color: ['#000000', '#000000', '#000000'],
     score:"0/0",
     play_text:"开始",
     his_score:'0',
@@ -38,6 +39,13 @@ Page({
     }
   },
 
+  ans: function () {
+    var color_t = ['#000000', '#000000', '#000000']
+    color_t[this.rand_id] = '#FFA500'
+    this.setData({ color: color_t})
+    this.rand_id=-1 //after show the ans, no point will be given
+  },
+
   get_his_score: function(){
     if (app.globalData.user_score_info.hasOwnProperty(this.data.article_info.id)) {
       var his_score = parseInt(app.globalData.user_score_info[this.data.article_info.id])
@@ -48,7 +56,6 @@ Page({
   },
 
   click: function(event){
-    console.log(app.globalData.openid)
     if (this.step >= this.true_list.length) {
       wx.showToast({
         title: '已回答完所有问题',
@@ -138,6 +145,8 @@ Page({
       }
     }
     this.setData({ choose: temp_op })
+    var color_t = ['#000000', '#000000', '#000000']
+    this.setData({ color: color_t })
     return 1
   },
 
@@ -153,8 +162,7 @@ Page({
   },
 
   onLoad: function (options) {
-    var start_word = parseInt(Math.random() * 5) + 1
-    var article_info_obj=JSON.parse(options.dataObj)
+    var article_info_obj = app.globalData.cur_article_info
     this.setData({ article_info: article_info_obj })
     var rank_list_temp=[]
     for (var i = 0; i < article_info_obj['sorted_name'].length; i++){
@@ -178,69 +186,86 @@ Page({
       this.setData({ play_text: "停止" })
       this.isPlay = 1
     })
-    // this.innerAudioContext.onStop((res) => {
-    //   this.init_restart()
-    // })
-    var keywords = this.data.article_info['keywords']
-    var kw_list = keywords.split(",")
-    var fake_candi_list = this.randomSort2(kw_list)
-    var cur_word = start_word
-    var last_word=-1
-    var temp_counter = 0
-    this.true_list = []
-    this.fake1_list = []
-    this.fake2_list = []
-    while(true){
-      this.true_list.push(kw_list[cur_word])
-      while(true){
-        var isOK=true
-        for (var i = last_word + 1; i <= cur_word;i++){
-          if (fake_candi_list[temp_counter] == kw_list[i]){
-            isOK=false
-            break
-          }
-        }
-        if (isOK){
-          break
-        }
-        temp_counter = temp_counter+1
-        if (temp_counter >= kw_list.length) {
-          temp_counter = 0
-        }
-      }
-      this.fake1_list.push(fake_candi_list[temp_counter])
-      var firstfake = fake_candi_list[temp_counter]
-      while (true) {
-        if (fake_candi_list[temp_counter] != firstfake) {
-          var isOK = true
-          for (var i = last_word + 1; i <= cur_word; i++) {
-            if (fake_candi_list[temp_counter] == kw_list[i]) {
-              isOK = false
+    var that=this
+    wx.request({
+      url: app.globalData.server + 'article_keyword',
+      data: { article_id: this.data.article_info['id'] },
+      success: function (res) {
+        var keywords = res.data.keywords
+        var step_rate = res.data.step_rate
+        step_rate = step_rate/0.7
+        var start_word = parseInt(Math.random() * 5) + 1
+        start_word =Math.floor(start_word*step_rate)
+        var kw_list = keywords.split(",")
+        var fake_candi_list = that.randomSort2(kw_list)
+        var cur_word = start_word
+        var last_word = -1
+        var temp_counter = 0
+        that.true_list = []
+        that.fake1_list = []
+        that.fake2_list = []
+        while (true) {
+          that.true_list.push(kw_list[cur_word])
+          while (true) {
+            var isOK = true
+            for (var i = last_word + 1; i <= cur_word; i++) {
+              if (fake_candi_list[temp_counter] == kw_list[i]) {
+                isOK = false
+                break
+              }
+            }
+            if (isOK) {
               break
             }
+            temp_counter = temp_counter + 1
+            if (temp_counter >= kw_list.length) {
+              temp_counter = 0
+            }
           }
-          if (isOK) {
+          that.fake1_list.push(fake_candi_list[temp_counter])
+          var firstfake = fake_candi_list[temp_counter]
+          while (true) {
+            if (fake_candi_list[temp_counter] != firstfake) {
+              var isOK = true
+              for (var i = last_word + 1; i <= cur_word; i++) {
+                if (fake_candi_list[temp_counter] == kw_list[i]) {
+                  isOK = false
+                  break
+                }
+              }
+              if (isOK) {
+                break
+              }
+            }
+            temp_counter = temp_counter + 1
+            if (temp_counter >= kw_list.length) {
+              temp_counter = 0
+            }
+          }
+          that.fake2_list.push(fake_candi_list[temp_counter])
+          last_word = cur_word
+          var jump_step = parseInt(Math.random() * 3) + 5
+          jump_step = Math.ceil(jump_step * step_rate)
+          cur_word = cur_word + jump_step
+          if (cur_word >= kw_list.length) {
             break
           }
         }
-        temp_counter = temp_counter + 1
-        if (temp_counter >= kw_list.length){
-          temp_counter=0
-        }
-      }
-      this.fake2_list.push(fake_candi_list[temp_counter])
-      last_word = cur_word
-      var jump_step = parseInt(Math.random() * 3) + 5
-      cur_word = cur_word + jump_step
-      if (cur_word >= kw_list.length){
-        break
-      }
-    }
-    this.isPlay=0
-    this.ques_num = this.true_list.length
-    this.setData({ his_score: this.get_his_score().toString()})
-    this.init_restart()
-    this.setData({ play_text: "开始" })
+        that.isPlay = 0
+        that.ques_num = that.true_list.length
+        that.setData({ his_score: that.get_his_score().toString() })
+        that.init_restart()
+        that.setData({ play_text: "开始" })
+      },
+      fail: function () {
+        wx.showToast({
+          title: '问题获取失败',
+          icon: 'none',
+          duration: 2000
+        })
+      },
+    })
+    
   },
 
   /**

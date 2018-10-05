@@ -11,4 +11,7 @@
   <button class="func_button" bindtap="bindEnglish">挑战听力极限</button>
   <button class="func_button" bindtap="bindMoe">排行榜</button>
   <button class="func_button" bindtap="bindHelp">原理讲解</button>
+  <text>\n</text>
+  <text>283136745@qq.com</text>
+  <text>茶末</text>
 </view>

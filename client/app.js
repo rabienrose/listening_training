@@ -9,6 +9,7 @@ App({
     openid:null,
     server:'https://weixin.zili-wang.com:21070/',
     //server: 'http://rabienrose.iicp.net:21070/',
-    user_score_info:null
+    user_score_info:null,
+    cur_article_info:null
   }
 })

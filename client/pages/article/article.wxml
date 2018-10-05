@@ -3,9 +3,10 @@
 <text>\n</text>
 <button bindtap='play'>{{play_text}}</button>
 <text>\n</text>
-<button id='0' bindtap='click' class='option'>{{choose[0]}}</button>
-<button id='1' bindtap='click' class='option'>{{choose[1]}}</button>
-<button id='2' bindtap='click' class='option'>{{choose[2]}}</button>
+<button id='0' bindtap='click' class='option' style='color:{{color[0]}}'>{{choose[0]}}</button>
+<button id='1' bindtap='click' class='option' style='color:{{color[1]}}'>{{choose[1]}}</button>
+<button id='2' bindtap='click' class='option' style='color:{{color[2]}}'>{{choose[2]}}</button>
+<button bindtap='ans' class='option'>提示</button>
 <text>\n</text>
 <text>分数：{{score}}</text>
 <text> (最高分：{{his_score}})</text>
