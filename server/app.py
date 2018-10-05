@@ -23,6 +23,7 @@ app = Flask(__name__)
 class ArticleForm(Form):
     title= StringField('Title')
     content = StringField('Content', widget=TextArea())
+    keyword = StringField('Keyword', widget=TextArea())
     level = IntegerField('Level')
     mp3 = StringField('Mp3')
     mp3_file= FileField('Mp3 File')
@@ -90,7 +91,7 @@ def process_keywords(content):
     filtered_words=[]
     words = re.split("[^a-zA-Z]", content)
     for word in words:
-        if len(word) <= 3:
+        if len(word) <= 4:
             continue
         if word.isupper():
             continue
@@ -238,7 +239,7 @@ def get_rank():
     print(re_list_json)
     return re_list_json
 
-def modify_article(id, title, mp3, content, level):
+def modify_article(id, title, mp3, content, level, keyword):
     c = conn.cursor()
     if content:
         keywords = process_keywords(content)
@@ -253,6 +254,9 @@ def modify_article(id, title, mp3, content, level):
         conn.commit()
     if level:
         c.execute("update article set level=? where id=?", [level, id])
+        conn.commit()
+    if keyword:
+        c.execute("update article set keyword=? where id=?", [keyword, id])
         conn.commit()
     return
 
@@ -270,6 +274,7 @@ def server_article_detail():
     for item in records:
         record=item
     key_str=record[1].replace(',', ' ')
+    #key_str=record[1]
     content_str= record[4].split('\n')
     ret_re={}
     ret_re['content']=content_str
@@ -285,6 +290,18 @@ def server_ui():
     form=ArticleForm(request.form)
     return render_template('upload.html', form=form, result=records)
 
+@app.route('/server_refresh_keyword', methods=['GET', 'POST'])
+def server_refresh_keyword():
+    c = conn.cursor()
+    c.execute('select * from article')
+    records = c.fetchall()
+    for item in records:
+        keywords = process_keywords(item[4])
+        keyword_str = ','.join(keywords)
+        c.execute("update article set keyword=? where id=?", [keyword_str, item[0]])
+        conn.commit()
+    return 'success'
+
 @app.route('/add_article_ui', methods=['GET', 'POST'])
 def add_article_ui():
     form = ArticleForm(CombinedMultiDict((request.files, request.form)))
@@ -292,6 +309,7 @@ def add_article_ui():
     mp3 = form.mp3.data
     level = form.level.data
     content = form.content.data
+    keyword= form.keyword.data
     id = form.id.data
     if form.mp3_file.data:
         form.mp3_file.data.save('/var/www/html/'+form.mp3_file.data.filename)
@@ -304,8 +322,14 @@ def add_article_ui():
             return 'level must be in the range of 1-5'
         write_a_article(title, mp3, content, keywords, level)
     else:
-        if title!='' or mp3!='' or level or content!='': #modify
-            modify_article(id, title, mp3, content, level)
+        if title!='' or mp3!='' or level or content!='' or keyword!='': #modify
+            if keyword!='':
+                keyword=keyword.replace(' ', ',')
+            else:
+                if content!='':
+                    keyword = process_keywords(content)
+                    keyword = ','.join(keyword)
+            modify_article(id, title, mp3, content, level, keyword)
         else: #del
             del_article(id)
     return redirect('/server_ui')
